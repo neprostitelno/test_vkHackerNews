@@ -1,14 +1,13 @@
 import {useState, useEffect, ReactNode} from 'react';
 import bridge, {UserInfo} from '@vkontakte/vk-bridge';
 import {
-  View,
-  SplitLayout,
-  SplitCol,
-  ScreenSpinner,
-  AppRoot
+    View,
+    SplitLayout,
+    SplitCol,
+    ScreenSpinner,
+    AppRoot
 } from '@vkontakte/vkui';
 import {useActiveVkuiLocation} from '@vkontakte/vk-mini-apps-router';
-
 import {News, Home} from './panels';
 import {DEFAULT_VIEW_PANELS} from './routes';
 import '@vkontakte/vkui/dist/vkui.css';
@@ -27,6 +26,7 @@ export const App = () => {
 
         fetchData();
     }, []);
+
 
     return (
         <AppRoot>
