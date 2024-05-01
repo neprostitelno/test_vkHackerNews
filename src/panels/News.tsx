@@ -41,6 +41,12 @@ export const News: FC<NavIdProps> = ({id}) => {
             `https://hacker-news.firebaseio.com/v0/item/${urlId}.json`
         );
         const newsEntity: entity = await newsResponse.json();
+        if (newsEntity.type !== "story") {
+            clearPopout()
+            await routeNavigator.push('/')
+
+            return
+        }
         dispatch(setNewsPage(newsEntity))
         if (newsEntity.kids) {
             const comments: entity[] = (await getEntitiesByIds(newsEntity.kids, max)).filter(
@@ -70,7 +76,7 @@ export const News: FC<NavIdProps> = ({id}) => {
         return (
             <Group>
                 {props.comments.filter((value) => value.parent === props.parent.id).map((comment: entity, index: number) =>
-                    <Cell before={<Counter mode="prominent">{comment.kids ? `${comment.kids.length}` : "0"}</Counter>}
+                    <Cell before={<Counter mode="secondary">{comment.kids ? `${comment.kids.length}` : "0"}</Counter>}
                           key={index}>
 
                         <SimpleCell id={`${comment.id}`} onClick={async () => {

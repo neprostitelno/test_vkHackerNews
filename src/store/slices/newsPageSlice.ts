@@ -8,7 +8,7 @@ const initialState: entity = {
     descendants: 0,
     id: 0,
     kids: [],
-    parent: "",
+    parent: 0,
     score: 0,
     text: "",
     time: 0,
