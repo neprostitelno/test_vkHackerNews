@@ -2,7 +2,7 @@ import {FC, useEffect, useState} from 'react';
 import {
     Button,
     Cell,
-    Counter,
+    Div,
     Group,
     Header,
     InfoRow,
@@ -10,7 +10,7 @@ import {
     Panel,
     PanelHeader,
     PanelHeaderBack, ScreenSpinner,
-    SimpleCell, SplitLayout
+    SimpleCell, SplitLayout, Title
 } from '@vkontakte/vkui';
 import {useParams, useRouteNavigator} from '@vkontakte/vk-mini-apps-router';
 import {entity, getEntitiesByIds} from "../store/entity.ts";
@@ -18,6 +18,9 @@ import {useAppSelector} from "../store/store.ts";
 import {setComments} from "../store/slices/commentsSlice.ts";
 import {useDispatch} from "react-redux";
 import {setNewsPage} from "../store/slices/newsPageSlice.ts"
+import {Icon48ChevronDownOutline, Icon48Replay} from "@vkontakte/icons";
+import style from "../assets/style/style.module.css"
+
 
 export interface TreeProps extends NavIdProps {
     parent: entity
@@ -36,6 +39,8 @@ export const News: FC<NavIdProps> = ({id}) => {
 
 
     async function getPageData(max: number) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         setPopout(<ScreenSpinner state="loading"/>);
         const newsResponse = await fetch(
             `https://hacker-news.firebaseio.com/v0/item/${urlId}.json`
@@ -74,21 +79,24 @@ export const News: FC<NavIdProps> = ({id}) => {
 
     const Tree: FC<TreeProps> = (props: TreeProps) => {
         return (
-            <Group>
+            <Div className={style.commentBlock}>
                 {props.comments.filter((value) => value.parent === props.parent.id).map((comment: entity, index: number) =>
-                    <Cell before={<Counter mode="secondary">{comment.kids ? `${comment.kids.length}` : "0"}</Counter>}
-                          key={index}>
+                    <Cell className={style.comment}>
 
-                        <SimpleCell id={`${comment.id}`} onClick={async () => {
+
+                        <div>{comment.text}</div>
+                        <div>{comment.by}</div>
+                        <div>{(new Date(comment.time * 1000).toLocaleString("ru-RU"))}</div>
+
+                        {comment.kids ?<Button onClick={async () => {
                             comment.kids ? await getKidsComments(comment, 100) : undefined
-                        }}>
-                            <div>{comment.text}</div>
-                            <div>{comment.by}</div>
-                            {(new Date(comment.time * 1000).toLocaleDateString("ru-RU"))}
-                            <Tree id={`${comment.id}`} parent={comment}
-                                  comments={comments.comments}></Tree></SimpleCell>
-                    </Cell>)}
-            </Group>
+                        }
+                                       }>Загрузить комментарии</Button>: null}
+                        <Tree id={`${comment.id}`} parent={comment}
+                              comments={comments.comments}></Tree>
+                    </Cell>
+                )}
+            </Div>
         );
     }
 
@@ -96,19 +104,20 @@ export const News: FC<NavIdProps> = ({id}) => {
         <SplitLayout popout={popout} aria-live="polite" aria-busy={!!popout}>
             <Panel id={id}>
                 <PanelHeader before={<PanelHeaderBack onClick={() => routeNavigator.push('/')}/>}>
-                    Вернуться на страницу новостей
+                    <Title level={"2"}>Вернуться на страницу новостей</Title>
                 </PanelHeader>
                 <Group
-                    header={<Header mode="secondary"><InfoRow header="Заголовок">{newsPage.title}</InfoRow></Header>}>
+                    header={<Header mode="secondary"><Title level={"3"}>{newsPage.title}</Title></Header>}>
                     <SimpleCell>
-                        <InfoRow header="Ссылка">{newsPage.url}</InfoRow>
-                        <InfoRow header="Дата">{newsPage.time}</InfoRow>
+                        <a href={newsPage.url}>{newsPage.url}</a>
+                        <InfoRow header="Дата">{(new Date(newsPage.time * 1000).toLocaleString("ru-RU"))}</InfoRow>
                         <InfoRow header="Автор">{newsPage.by}</InfoRow>
                     </SimpleCell>
+                    <Header>Комментарии {newsPage.descendants}</Header>
+                    <Icon48Replay className={style.update}
+                                  onClick={async () => await getPageData(100)}>Обновить</Icon48Replay>
+                    <Tree id={`${newsPage.id}`} parent={newsPage} comments={comments.comments}></Tree>
                 </Group>
-                <Header>Комментарии<Counter mode="prominent">{newsPage.descendants}</Counter></Header>
-                <Button onClick={async () => await getPageData(100)}>Обновить</Button>
-                <Tree id={`${newsPage.id}`} parent={newsPage} comments={comments.comments}></Tree>
             </Panel>
         </SplitLayout>
     );
