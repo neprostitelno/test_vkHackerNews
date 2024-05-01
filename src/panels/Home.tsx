@@ -1,11 +1,11 @@
-import {FC, useEffect} from 'react';
+import {FC, useEffect, useState} from 'react';
 import {
     Panel,
     PanelHeader,
     Group,
     Cell,
     NavIdProps,
-    Counter, SimpleCell,
+    Counter, SimpleCell, Button, ScreenSpinner, SplitLayout
 } from '@vkontakte/vkui';
 import {UserInfo} from '@vkontakte/vk-bridge';
 import {useRouteNavigator} from '@vkontakte/vk-mini-apps-router';
@@ -23,15 +23,20 @@ export const Home: FC<HomeProps> = () => {
     const routeNavigator = useRouteNavigator();
     const news = useAppSelector(state => state.news)
     const dispatch = useDispatch();
+    const [popout, setPopout] = useState(null);
 
-    async function getNews(max: number) : Promise<void> {
+    const clearPopout = () => setPopout(null);
+
+
+    async function getNews(max: number): Promise<void> {
+        setPopout(<ScreenSpinner state="loading"/>);
         const newsResponse = await fetch(
             "https://hacker-news.firebaseio.com/v0/newstories.json"
         );
         const newsIds = await newsResponse.json();
         const allNews: entity[] = await getEntitiesByIds(newsIds, max)
         dispatch(setNewsPage(allNews));
-
+        clearPopout()
     }
 
     useEffect(() => {
@@ -47,18 +52,22 @@ export const Home: FC<HomeProps> = () => {
     }, [news]);
 
     return (
-        <Panel>
-            <PanelHeader>Hacker News</PanelHeader>
-            <Group>
-                {news.news.map((newsPost: entity, index: number) => <Cell key={index}
-                                                                          onClick={() => routeNavigator.push(`news/${newsPost.id}`)}>
-                    <SimpleCell before={<Counter>{newsPost.score}</Counter>}>
-                        <div>{newsPost.title}</div>
-                        <div>{newsPost.by}</div>
-                        {(new Date(newsPost.time * 1000).toLocaleDateString("ru-RU"))}</SimpleCell>
+        <SplitLayout popout={popout} aria-live="polite" aria-busy={!!popout}>
+            <Panel>
+                <PanelHeader>Hacker News</PanelHeader>
+                <Button onClick={async () => await getNews(100)}>Обновить</Button>
+                <Group>
+                    {news.news.map((newsPost: entity, index: number) => <Cell key={index}
+                                                                              onClick={() => routeNavigator.push(`news/${newsPost.id}`)}>
+                        <SimpleCell before={<Counter>{newsPost.score}</Counter>}>
+                            <div>{newsPost.title}</div>
+                            <div>{newsPost.by}</div>
+                            {(new Date(newsPost.time * 1000).toLocaleDateString("ru-RU"))}</SimpleCell>
 
-                </Cell>)}
-            </Group>
-        </Panel>
+                    </Cell>)}
+                </Group>
+            </Panel>
+        </SplitLayout>
+
     );
 };

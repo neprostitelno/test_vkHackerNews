@@ -16,7 +16,7 @@ export const commentSlice = createSlice({
     initialState,
     reducers: {
         setComments: (state, action: PayloadAction<entity[]>) => {
-            state.comments = action.payload
+            state.comments = action.payload.sort((a: entity, b: entity) => b.time-a.time)
             state.kidsAdded = action.payload.map(function (comment) {
                 return comment.id;
             })

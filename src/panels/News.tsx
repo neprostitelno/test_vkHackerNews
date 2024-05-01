@@ -1,5 +1,6 @@
-import {FC, useEffect} from 'react';
+import {FC, useEffect, useState} from 'react';
 import {
+    Button,
     Cell,
     Counter,
     Group,
@@ -8,8 +9,8 @@ import {
     NavIdProps,
     Panel,
     PanelHeader,
-    PanelHeaderBack,
-    SimpleCell
+    PanelHeaderBack, ScreenSpinner,
+    SimpleCell, SplitLayout
 } from '@vkontakte/vkui';
 import {useParams, useRouteNavigator} from '@vkontakte/vk-mini-apps-router';
 import {entity, getEntitiesByIds} from "../store/entity.ts";
@@ -30,18 +31,24 @@ export const News: FC<NavIdProps> = ({id}) => {
     const newsPage = useAppSelector(state => state.newsPage)
     const comments = useAppSelector(state => state.comments)
     const dispatch = useDispatch();
+    const [popout, setPopout] = useState(null);
+    const clearPopout = () => setPopout(null);
+
 
     async function getPageData(max: number) {
+        setPopout(<ScreenSpinner state="loading"/>);
         const newsResponse = await fetch(
             `https://hacker-news.firebaseio.com/v0/item/${urlId}.json`
         );
         const newsEntity: entity = await newsResponse.json();
         dispatch(setNewsPage(newsEntity))
-        const comments: entity[] = (await getEntitiesByIds(newsEntity.kids, max)).filter(
-            (value) => (!value.deleted && value.type === "comment")
-        )
-        dispatch(setComments(comments));
-
+        if (newsEntity.kids) {
+            const comments: entity[] = (await getEntitiesByIds(newsEntity.kids, max)).filter(
+                (value) => (!value.deleted && value.type === "comment")
+            )
+            dispatch(setComments(comments));
+        }
+        clearPopout()
     }
 
     async function getKidsComments(comment: entity, max: number) {
@@ -54,6 +61,7 @@ export const News: FC<NavIdProps> = ({id}) => {
         dispatch(setComments([...comments.comments, ...kidsComment]));
     }
 
+
     useEffect(() => {
         getPageData(100);
     }, []);
@@ -62,7 +70,8 @@ export const News: FC<NavIdProps> = ({id}) => {
         return (
             <Group>
                 {props.comments.filter((value) => value.parent === props.parent.id).map((comment: entity, index: number) =>
-                    <Cell before={<Counter mode="prominent">{comment.kids ? `${comment.kids.length}`: "0" }</Counter>} key={index}>
+                    <Cell before={<Counter mode="prominent">{comment.kids ? `${comment.kids.length}` : "0"}</Counter>}
+                          key={index}>
 
                         <SimpleCell id={`${comment.id}`} onClick={async () => {
                             comment.kids ? await getKidsComments(comment, 100) : undefined
@@ -78,20 +87,23 @@ export const News: FC<NavIdProps> = ({id}) => {
     }
 
     return (
-        <Panel id={id}>
-            <PanelHeader before={<PanelHeaderBack onClick={() => routeNavigator.push('/')}/>}>
-                Вернуться на страницу новостей
-            </PanelHeader>
-            <Group header={<Header mode="secondary"><InfoRow header="Заголовок">{newsPage.title}</InfoRow></Header>}>
-                <SimpleCell>
-                    <InfoRow header="Ссылка">{newsPage.url}</InfoRow>
-                    <InfoRow header="Дата">{newsPage.time}</InfoRow>
-                    <InfoRow header="Автор">{newsPage.by}</InfoRow>
-                </SimpleCell>
-
-            </Group>
-            <Header>Комментарии<Counter mode="prominent">{newsPage.descendants}</Counter></Header>
-            <Tree id={`${newsPage.id}`} parent={newsPage} comments={comments.comments}></Tree>
-        </Panel>
+        <SplitLayout popout={popout} aria-live="polite" aria-busy={!!popout}>
+            <Panel id={id}>
+                <PanelHeader before={<PanelHeaderBack onClick={() => routeNavigator.push('/')}/>}>
+                    Вернуться на страницу новостей
+                </PanelHeader>
+                <Group
+                    header={<Header mode="secondary"><InfoRow header="Заголовок">{newsPage.title}</InfoRow></Header>}>
+                    <SimpleCell>
+                        <InfoRow header="Ссылка">{newsPage.url}</InfoRow>
+                        <InfoRow header="Дата">{newsPage.time}</InfoRow>
+                        <InfoRow header="Автор">{newsPage.by}</InfoRow>
+                    </SimpleCell>
+                </Group>
+                <Header>Комментарии<Counter mode="prominent">{newsPage.descendants}</Counter></Header>
+                <Button onClick={async () => await getPageData(100)}>Обновить</Button>
+                <Tree id={`${newsPage.id}`} parent={newsPage} comments={comments.comments}></Tree>
+            </Panel>
+        </SplitLayout>
     );
 };

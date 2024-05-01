@@ -24,6 +24,10 @@ function handleModuleDirectivesPlugin() {
 export default defineConfig({
   base: './',
 
+  server: {
+    port: 3000,
+  },
+
   plugins: [
     react(),
     handleModuleDirectivesPlugin(),
