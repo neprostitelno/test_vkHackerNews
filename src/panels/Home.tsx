@@ -5,11 +5,13 @@ import {
     Group,
     Cell,
     NavIdProps,
+    Counter, SimpleCell,
 } from '@vkontakte/vkui';
 import {UserInfo} from '@vkontakte/vk-bridge';
 import {useRouteNavigator} from '@vkontakte/vk-mini-apps-router';
 import {useAppSelector} from "../store/store.ts";
-import {news, setNewsPage} from "../store/slices/newsSlice.ts";
+import {getEntitiesByIds, entity} from "../store/entity.ts";
+import {setNewsPage} from "../store/slices/newsSlice.ts"
 import {useDispatch} from "react-redux";
 
 export interface HomeProps extends NavIdProps {
@@ -22,19 +24,12 @@ export const Home: FC<HomeProps> = () => {
     const news = useAppSelector(state => state.news)
     const dispatch = useDispatch();
 
-    async function getNews(max:number) {
+    async function getNews(max: number) : Promise<void> {
         const newsResponse = await fetch(
             "https://hacker-news.firebaseio.com/v0/newstories.json"
         );
         const newsIds = await newsResponse.json();
-        const newsPromises = newsIds
-            .slice(0, max)
-            .map((id:number) =>
-                fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(
-                    (response) => response.json()
-                )
-            );
-        const allNews = await Promise.all(newsPromises);
+        const allNews: entity[] = await getEntitiesByIds(newsIds, max)
         dispatch(setNewsPage(allNews));
 
     }
@@ -55,9 +50,13 @@ export const Home: FC<HomeProps> = () => {
         <Panel>
             <PanelHeader>Hacker News</PanelHeader>
             <Group>
-                {news.news.map((newsPost: news, index: number) => <Cell key={index}
-                                                                        onClick={() => routeNavigator.push('news')}>{newsPost.title}
-                    {newsPost.score} {newsPost.by} {(new Date(newsPost.time * 1000).toLocaleDateString("ru-RU"))}
+                {news.news.map((newsPost: entity, index: number) => <Cell key={index}
+                                                                          onClick={() => routeNavigator.push(`news/${newsPost.id}`)}>
+                    <SimpleCell before={<Counter>{newsPost.score}</Counter>}>
+                        <div>{newsPost.title}</div>
+                        <div>{newsPost.by}</div>
+                        {(new Date(newsPost.time * 1000).toLocaleDateString("ru-RU"))}</SimpleCell>
+
                 </Cell>)}
             </Group>
         </Panel>

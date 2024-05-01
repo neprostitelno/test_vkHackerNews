@@ -1,6 +1,9 @@
-import { FC } from 'react';
+import {FC, useEffect} from 'react';
 import {
+    Cell,
     Counter,
+    Group,
+    Header,
     InfoRow,
     NavIdProps,
     Panel,
@@ -8,26 +11,87 @@ import {
     PanelHeaderBack,
     SimpleCell
 } from '@vkontakte/vkui';
-import { useRouteNavigator } from '@vkontakte/vk-mini-apps-router';
+import {useParams, useRouteNavigator} from '@vkontakte/vk-mini-apps-router';
+import {entity, getEntitiesByIds} from "../store/entity.ts";
+import {useAppSelector} from "../store/store.ts";
+import {setComments} from "../store/slices/commentsSlice.ts";
+import {useDispatch} from "react-redux";
+import {setNewsPage} from "../store/slices/newsPageSlice.ts"
 
-export const News: FC<NavIdProps> = ({ id }) => {
-  const routeNavigator = useRouteNavigator();
+export interface TreeProps extends NavIdProps {
+    parent: entity
+    comments: entity[]
+}
 
+export const News: FC<NavIdProps> = ({id}) => {
+
+    const routeNavigator = useRouteNavigator();
+    const urlId = useParams<'id'>()?.id;
+    const newsPage = useAppSelector(state => state.newsPage)
+    const comments = useAppSelector(state => state.comments)
+    const dispatch = useDispatch();
+
+    async function getPageData(max: number) {
+        const newsResponse = await fetch(
+            `https://hacker-news.firebaseio.com/v0/item/${urlId}.json`
+        );
+        const newsEntity: entity = await newsResponse.json();
+        dispatch(setNewsPage(newsEntity))
+        const comments: entity[] = (await getEntitiesByIds(newsEntity.kids, max)).filter(
+            (value) => (!value.deleted && value.type === "comment")
+        )
+        dispatch(setComments(comments));
+
+    }
+
+    async function getKidsComments(comment: entity, max: number) {
+        const loadingKids = comment.kids.filter(value => !comments.kidsAdded.includes(value))
+
+        const kidsComment = (await getEntitiesByIds(loadingKids, max)).filter(
+            (value) => (!value.deleted && value.type === "comment")
+        )
+
+        dispatch(setComments([...comments.comments, ...kidsComment]));
+    }
+
+    useEffect(() => {
+        getPageData(100);
+    }, []);
+
+    const Tree: FC<TreeProps> = (props: TreeProps) => {
+        return (
+            <Group>
+                {props.comments.filter((value) => value.parent === props.parent.id).map((comment: entity, index: number) =>
+                    <Cell before={<Counter mode="prominent">{comment.kids ? `${comment.kids.length}`: "0" }</Counter>} key={index}>
+
+                        <SimpleCell id={`${comment.id}`} onClick={async () => {
+                            comment.kids ? await getKidsComments(comment, 100) : undefined
+                        }}>
+                            <div>{comment.text}</div>
+                            <div>{comment.by}</div>
+                            {(new Date(comment.time * 1000).toLocaleDateString("ru-RU"))}
+                            <Tree id={`${comment.id}`} parent={comment}
+                                  comments={comments.comments}></Tree></SimpleCell>
+                    </Cell>)}
+            </Group>
+        );
+    }
 
     return (
-    <Panel id={id}>
-      <PanelHeader before={<PanelHeaderBack onClick={() => routeNavigator.back()} />}>
-        Вернуться на страницу новостей
-      </PanelHeader>
-      <SimpleCell>
-          <InfoRow header="Заголовок">Заголовок</InfoRow>
-          <InfoRow header="Ссылка">Ссылка</InfoRow>
-          <InfoRow header="Дата">Дата</InfoRow>
-          <InfoRow header="Автор">Автор</InfoRow>
-      </SimpleCell>
-        <SimpleCell before={<Counter>8</Counter>}>
-            Комментарии
-        </SimpleCell>
-    </Panel>
-  );
+        <Panel id={id}>
+            <PanelHeader before={<PanelHeaderBack onClick={() => routeNavigator.push('/')}/>}>
+                Вернуться на страницу новостей
+            </PanelHeader>
+            <Group header={<Header mode="secondary"><InfoRow header="Заголовок">{newsPage.title}</InfoRow></Header>}>
+                <SimpleCell>
+                    <InfoRow header="Ссылка">{newsPage.url}</InfoRow>
+                    <InfoRow header="Дата">{newsPage.time}</InfoRow>
+                    <InfoRow header="Автор">{newsPage.by}</InfoRow>
+                </SimpleCell>
+
+            </Group>
+            <Header>Комментарии<Counter mode="prominent">{newsPage.descendants}</Counter></Header>
+            <Tree id={`${newsPage.id}`} parent={newsPage} comments={comments.comments}></Tree>
+        </Panel>
+    );
 };

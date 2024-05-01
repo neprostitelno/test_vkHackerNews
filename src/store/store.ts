@@ -1,10 +1,13 @@
 import {combineReducers, configureStore} from '@reduxjs/toolkit'
 import {newsReducer} from './slices/newsSlice.ts'
 import {TypedUseSelectorHook, useDispatch, useSelector} from "react-redux";
-import {RootState} from "@reduxjs/toolkit/query";
+import {newsPageReducer} from "./slices/newsPageSlice.ts";
+import {commentsReducer} from "./slices/commentsSlice.ts";
 
 const rootReducer = combineReducers({
-    news: newsReducer
+    news: newsReducer,
+    newsPage: newsPageReducer,
+    comments: commentsReducer
 })
 const store = configureStore({
     reducer: rootReducer,

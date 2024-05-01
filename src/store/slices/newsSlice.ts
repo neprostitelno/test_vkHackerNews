@@ -1,30 +1,19 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit'
-
-export interface news {
-    by: string,
-    descendants: number,
-    id: number,
-    kids: number[],
-    score: number,
-    time: number,
-    title: string,
-    type: string,
-    url: string,
-}
+import {entity} from "../entity.ts";
 
 export interface newsState {
-    news: news[]
+    news: entity[]
 }
-
 
 const initialState: newsState = {
     news: []
 }
+
 export const newsSlice = createSlice({
     name: 'news',
     initialState,
     reducers: {
-        setNewsPage: (state, action: PayloadAction<news[]>) => {
+        setNewsPage: (state, action: PayloadAction<entity[]>) => {
             state.news = action.payload
 
         }
