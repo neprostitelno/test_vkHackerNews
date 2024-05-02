@@ -75,7 +75,6 @@ export const News: FC<NavIdProps> = ({id}) => {
     const Tree: FC<TreeProps> = (props: TreeProps) => {
         return (
             <Div className={style.commentBlock}>
-                {isLoading && <Spinner size='large' style={{ margin: '20px 0' }} />}
                 {props.comments.filter((value) => value.parent === props.parent.id).map((comment: entity, index: number) =>
                     <Cell key ={index} className={style.comment}>
 
@@ -113,6 +112,7 @@ export const News: FC<NavIdProps> = ({id}) => {
                     <div className={style.commentHeader}><Header>Комментарии {newsPage.descendants}</Header>
                         <Icon48Replay className={style.update}
                                       onClick={async () => await getPageData(100)}>Обновить</Icon48Replay></div>
+                    {isLoading && <Spinner size='large' style={{ margin: '20px 0' }} />}
                     <Tree id={`${newsPage.id}`} parent={newsPage} comments={comments.comments}></Tree>
                 </Group>
             </Panel>
