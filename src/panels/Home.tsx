@@ -63,7 +63,7 @@ export const Home: FC<HomeProps> = () => {
                     {news.news.map((newsPost: entity, index: number) => <Cell key={index}
                                                                               onClick={() => routeNavigator.push(`news/${newsPost.id}`)}>
                         <SimpleCell before={<Counter>{newsPost.score}</Counter>}>
-                            <Title level="2">{newsPost.title}</Title>
+                            <Title className={style.text} level="2">{newsPost.title}</Title>
                             {(new Date(newsPost.time * 1000).toLocaleString("ru-RU"))} |
                             &nbsp;{newsPost.by}
                         </SimpleCell>

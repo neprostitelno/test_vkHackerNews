@@ -20,7 +20,7 @@ import {useDispatch} from "react-redux";
 import {setNewsPage} from "../store/slices/newsPageSlice.ts"
 import {Icon48Replay} from "@vkontakte/icons";
 import style from "../assets/style/style.module.css"
-
+import ReactHtmlParser from 'react-html-parser';
 
 export interface TreeProps extends NavIdProps {
     parent: entity
@@ -79,7 +79,7 @@ export const News: FC<NavIdProps> = ({id}) => {
                     <Cell key ={index} className={style.comment}>
 
 
-                        <Text>{comment.text}</Text>
+                        <Text className={style.text}>{ ReactHtmlParser(comment.text)}</Text>
                         <Spacing size={16} />
                         <Caption level={"1"} className={style.caption}>{comment.by}&nbsp;|&nbsp;{(new Date(comment.time * 1000).toLocaleString("ru-RU"))}</Caption >
 
@@ -101,7 +101,7 @@ export const News: FC<NavIdProps> = ({id}) => {
                     <Title level={"2"}>Вернуться на страницу новостей</Title>
                 </PanelHeader>
                 <Group className={style.pageComment}
-                    header={<Header mode="secondary"><Title level={"3"}>{newsPage.title}</Title></Header>}>
+                    header={<Header mode="secondary"><Title level={"3"} className={style.text}>{newsPage.title}</Title></Header>}>
                     <SimpleCell>
                         <div>{(new Date(newsPage.time * 1000).toLocaleString("ru-RU"))}&nbsp;|
                             &nbsp;{newsPage.by}
