@@ -5,7 +5,7 @@ import {
     Group,
     Cell,
     NavIdProps,
-    Counter, SimpleCell, ScreenSpinner, SplitLayout, Title
+    Counter, SimpleCell, Title, Spinner
 } from '@vkontakte/vkui';
 import {Icon48Replay} from '@vkontakte/icons';
 import {UserInfo} from '@vkontakte/vk-bridge';
@@ -26,22 +26,18 @@ export const Home: FC<HomeProps> = () => {
     const routeNavigator = useRouteNavigator();
     const news = useAppSelector(state => state.news)
     const dispatch = useDispatch();
-    const [popout, setPopout] = useState(null);
-
-    const clearPopout = () => setPopout(null);
+    const [isLoading, setIsLoading] = useState(false);
 
 
     async function getNews(max: number): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        setPopout(<ScreenSpinner state="loading"/>);
+        setIsLoading(true);
         const newsResponse = await fetch(
             "https://hacker-news.firebaseio.com/v0/newstories.json"
         );
         const newsIds = await newsResponse.json();
         const allNews: entity[] = await getEntitiesByIds(newsIds, max)
         dispatch(setNewsPage(allNews));
-        clearPopout()
+        setIsLoading(false);
     }
 
     useEffect(() => {
@@ -57,13 +53,13 @@ export const Home: FC<HomeProps> = () => {
     }, [news]);
 
     return (
-        <SplitLayout popout={popout} aria-live="polite" aria-busy={!!popout}>
             <Panel>
                 <PanelHeader className={style.panel}>
                     <Title>Hacker News</Title>
                     <Icon48Replay className={style.update} onClick={async () => await getNews(100)}/>
                 </PanelHeader>
                 <Group>
+                    {isLoading && <Spinner size='large' style={{ margin: '20px 0' }} />}
                     {news.news.map((newsPost: entity, index: number) => <Cell key={index}
                                                                               onClick={() => routeNavigator.push(`news/${newsPost.id}`)}>
                         <SimpleCell before={<Counter>{newsPost.score}</Counter>}>
@@ -72,11 +68,8 @@ export const Home: FC<HomeProps> = () => {
                             &nbsp;{newsPost.by}
                         </SimpleCell>
 
-
                     </Cell>)}
                 </Group>
             </Panel>
-        </SplitLayout>
-
     );
 };

@@ -1,18 +1,22 @@
-.update{
-    width: 30px!important;
-    height: 30px!important;
+.update {
+    width: 30px !important;
+    height: 30px !important;
+    float: right;
 }
-.panel .update{
+
+.panel .update {
     position: absolute;
     right: 10px;
     bottom: 10px;
 }
-.comment{
-    border-bottom: black 1px solid!important;
-}
-.comment.update{
 
+.comment {
+    border-bottom: black 1px solid !important;
 }
-.commentBlock{
-
+.caption{
+    padding-bottom: 10px;
+}
+.commentHeader {
+    display: flex;
+    justify-content: space-between;
 }
